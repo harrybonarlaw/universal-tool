@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Document & Image Workspace</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic-to@1.4.3/dist/iife/heic-to.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-6 font-sans flex flex-col items-center">
+
+    <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full overflow-hidden mb-12">
+        
+        <div class="bg-slate-900 p-8 text-center flex flex-col items-center border-b border-slate-800">
+            <img src="logo.png" alt="Company Logo" class="h-12 w-auto object-contain mb-3 drop-shadow-md brightness-100 invert-0">
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Universal File Suite</h1>
+            <p class="text-xs text-slate-400 mt-1">100% Secure & Private. All processing operations execute directly inside your browser.</p>
+        </div>
+
+        <div class="bg-slate-50 border-b border-slate-200 flex sm:flex-row flex-col">
+            <button onclick="switchTab('rename-tab')" id="rename-tab-btn" class="flex-1 py-4 px-6 font-semibold text-sm text-center border-b-2 border-indigo-600 text-indigo-600 bg-white transition duration-150 outline-none">
+                📁 Batch File Renamer
+            </button>
+            <button onclick="switchTab('heic-tab')" id="heic-tab-btn" class="flex-1 py-4 px-6 font-semibold text-sm text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 transition duration-150 outline-none">
+                🖼️ HEIC to JPG Converter
+            </button>
+            <button onclick="switchTab('ocr-tab')" id="ocr-tab-btn" class="flex-1 py-4 px-6 font-semibold text-sm text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 transition duration-150 outline-none">
+                🔍 Universal Text Extractor
+            </button>
+        </div>
+
+        <div class="p-8">
+            
+            <div id="rename-tab" class="tab-panel space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Select Files to Rename</label>
+                    <input type="file" id="renameInput" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-lg p-1.5 bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Prefix</label>
+                        <input type="text" id="renamePrefix" placeholder="e.g., Project_" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Suffix</label>
+                        <input type="text" id="renameSuffix" placeholder="e.g., _v1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="renameCounter" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded">
+                        <label for="renameCounter" class="ml-2 text-sm text-slate-700 font-medium">Include sequential numbering (1, 2, 3...)</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="renameClear" class="h-4 w-4 text-red-600 focus:ring-red-500 border-slate-300 rounded">
+                        <label for="renameClear" class="ml-2 text-sm text-red-700 font-medium">Completely clear original file names</label>
+                    </div>
+                </div>
+                <button id="renameActionBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md">
+                    Process and Download Renamed ZIP
+                </button>
+            </div>
+
+            <div id="heic-tab" class="tab-panel space-y-5 hidden">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Upload HEIC Images</label>
+                    <input type="file" id="heicInput" multiple accept=".heic,.HEIC" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-lg p-1.5 bg-white">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="heicQuality" class="text-sm font-semibold text-slate-700">Output JPEG Quality</label>
+                        <span id="qualityDisplay" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">85%</span>
+                    </div>
+                    <input type="range" id="heicQuality" min="10" max="100" value="85" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                </div>
+                <button id="heicActionBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md">
+                    Convert and Download JPG ZIP
+                </button>
+            </div>
+
+            <div id="ocr-tab" class="tab-panel space-y-5 hidden">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Upload Document or Image (PDF, JPG, PNG, WebP)</label>
+                    <input type="file" id="ocrInput" accept=".pdf,image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-lg p-1.5 bg-white">
+                </div>
+                <button id="ocrActionBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md">
+                    Analyze and Extract Text
+                </button>
+                
+                <div id="ocrWorkspace" class="border-t border-slate-200 pt-5 hidden space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm font-semibold text-slate-700">Extracted Text Content</label>
+                        <div class="flex gap-2">
+                            <button id="ocrCopyBtn" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1 px-3 rounded transition">Copy Text</button>
+                            <button id="ocrDownloadBtn" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-1 px-3 rounded transition">Save as .txt</button>
+                        </div>
+                    </div>
+                    <textarea id="ocrTextArea" class="w-full h-64 p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-h-96 overflow-y-auto" readonly></textarea>
+                </div>
+            </div>
+
+            <div id="globalProgress" class="mt-6 hidden">
+                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                    <span id="statusText">Processing operational nodes...</span>
+                    <span id="percentText">0%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2">
+                    <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="globalAlert" class="mt-4 text-center text-sm font-medium hidden p-3 rounded-xl border"></div>
+
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Global Alert/Progress Handles
+        const globalProgress = document.getElementById('globalProgress');
+        const statusText = document.getElementById('statusText');
+        const percentText = document.getElementById('percentText');
+        const progressBar = document.getElementById('progressBar');
+        const globalAlert = document.getElementById('globalAlert');
+
+        // Tab Switching Router
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('[id$="-tab-btn"]').forEach(btn => {
+                btn.classList.replace('border-indigo-600', 'border-transparent');
+                btn.classList.replace('text-indigo-600', 'text-slate-500');
+                btn.classList.remove('bg-white');
+            });
+            const activeBtn = document.getElementById(`${tabId}-btn`);
+            activeBtn.classList.replace('border-transparent', 'border-indigo-600');
+            activeBtn.classList.replace('text-slate-500', 'text-indigo-600');
+            activeBtn.classList.add('bg-white');
+            
+            globalAlert.classList.add('hidden');
+            globalProgress.classList.add('hidden');
+        }
+
+        // Global Visual Notification Trigger
+        function triggerNotification(text, styling) {
+            globalAlert.className = `mt-4 text-center text-sm font-medium p-3 rounded-xl border ${styling}`;
+            globalAlert.innerText = text;
+            globalAlert.classList.remove('hidden');
+        }
+
+        // --- SUB-LOGIC 1: BATCH RENAMER ENGINE ---
+        const renameInput = document.getElementById('renameInput');
+        const renameActionBtn = document.getElementById('renameActionBtn');
+
+        renameActionBtn.addEventListener('click', async () => {
+            const files = renameInput.files;
+            const prefix = document.getElementById('renamePrefix').value;
+            const suffix = document.getElementById('renameSuffix').value;
+            const includeCounter = document.getElementById('renameCounter').checked;
+            const clearName = document.getElementById('renameClear').checked;
+
+            if(files.length === 0) { triggerNotification("Please select files to rename first.", "bg-red-50 text-red-700 border-red-200"); return; }
+            if(clearName && !prefix && !suffix && !includeCounter) { triggerNotification("Wiping file names requires providing a substitute prefix, suffix, or counter.", "bg-red-50 text-red-700 border-red-200"); return; }
+
+            globalAlert.classList.add('hidden');
+            const zip = new JSZip();
+            let counter = 1;
+
+            for(let i=0; i<files.length; i++) {
+                const file = files[i];
+                const lastDot = file.name.lastIndexOf('.');
+                const name = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+                const ext = lastDot !== -1 ? file.name.substring(lastDot) : '';
+
+                let newName = clearName ? "" : name;
+                if(prefix) newName = prefix + newName;
+                if(includeCounter) { newName = newName + counter; counter++; }
+                if(suffix) newName = newName + suffix;
+
+                zip.file((newName + ext), file);
+            }
+
+            const content = await zip.generateAsync({type:"blob"});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "renamed_files_archive.zip";
+            link.click();
+            triggerNotification(`Successfully batch renamed ${files.length} files into download package!`, "bg-green-50 text-green-700 border-green-200");
+        });
+
+        // --- SUB-LOGIC 2: HEIC IMAGE CONVERTER ENGINE ---
+        const heicInput = document.getElementById('heicInput');
+        const heicQuality = document.getElementById('heicQuality');
+        const qualityDisplay = document.getElementById('qualityDisplay');
+        const heicActionBtn = document.getElementById('heicActionBtn');
+
+        heicQuality.addEventListener('input', (e) => qualityDisplay.innerText = `${e.target.value}%`);
+
+        heicActionBtn.addEventListener('click', async () => {
+            const files = heicInput.files;
+            if(files.length === 0) { triggerNotification("Please upload HEIC images first.", "bg-red-50 text-red-700 border-red-200"); return; }
+
+            heicActionBtn.disabled = true;
+            globalAlert.classList.add('hidden');
+            globalProgress.classList.remove('hidden');
+
+            const zip = new JSZip();
+            const qVal = parseFloat(heicQuality.value) / 100;
+            let successCount = 0;
+
+            for(let i=0; i<files.length; i++) {
+                const file = files[i];
+                const prog = Math.round((i / files.length) * 100);
+                statusText.innerText = `Converting image asset: ${file.name}`;
+                percentText.innerText = `${prog}%`;
+                progressBar.style.width = `${prog}%`;
+
+                try {
+                    const outBlob = await HeicTo({ blob: file, type: "image/jpeg", quality: qVal });
+                    const base = file.name.replace(/\.[^/.]+$/, "");
+                    zip.file(`${base}.jpg`, outBlob);
+                    successCount++;
+                } catch(err) { console.error(err); }
+            }
+
+            if(successCount > 0) {
+                const content = await zip.generateAsync({type:"blob"});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = "converted_heic_images.zip";
+                link.click();
+                triggerNotification(`Successfully finalized compilation bundle for ${successCount} image elements!`, "bg-green-50 text-green-700 border-green-200");
+            } else {
+                triggerNotification("Conversion pipeline failed parsing files. Verify structural image integrity.", "bg-red-50 text-red-700 border-red-200");
+            }
+            heicActionBtn.disabled = false;
+            globalProgress.classList.add('hidden');
+        });
+
+        // --- SUB-LOGIC 3: UNIVERSAL TEXT EXTRACTOR ENGINE ---
+        const ocrInput = document.getElementById('ocrInput');
+        const ocrActionBtn = document.getElementById('ocrActionBtn');
+        const ocrWorkspace = document.getElementById('ocrWorkspace');
+        const ocrTextArea = document.getElementById('ocrTextArea');
+        const ocrCopyBtn = document.getElementById('ocrCopyBtn');
+        const ocrDownloadBtn = document.getElementById('ocrDownloadBtn');
+        let ocrBuffer = "";
+
+        ocrActionBtn.addEventListener('click', async () => {
+            const file = ocrInput.files[0];
+            if(!file) { triggerNotification("Please drag or select an analytics document matrix file.", "bg-red-50 text-red-700 border-red-200"); return; }
+
+            ocrActionBtn.disabled = true;
+            globalAlert.classList.add('hidden');
+            ocrWorkspace.classList.add('hidden');
+            globalProgress.classList.remove('hidden');
+            ocrBuffer = "";
+
+            try {
+                if(file.type === "application/pdf" || file.name.endsWith('.pdf')) {
+                    const buf = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+                    const pages = pdf.numPages;
+                    const worker = await Tesseract.createWorker('eng');
+
+                    for(let p=1; p<=pages; p++) {
+                        const prog = Math.round((p / pages) * 100);
+                        statusText.innerText = `Vectorization scanning sequence running page node ${p} of ${pages}`;
+                        percentText.innerText = `${prog}%`;
+                        progressBar.style.width = `${prog}%`;
+
+                        const pageNode = await pdf.getPage(p);
+                        const view = pageNode.getViewport({ scale: 1.5 });
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.height = view.height; canvas.width = view.width;
+                        
+                        await pageNode.render({ canvasContext: ctx, viewport: view }).promise;
+                        const { data: { text } } = await worker.recognize(canvas);
+                        ocrBuffer += `--- Document Page ${p} ---\n${text}\n\n`;
+                    }
+                    await worker.terminate();
+                } else {
+                    statusText.innerText = "Spawning background core thread processing parameters...";
+                    const result = await Tesseract.recognize(file, 'eng', {
+                        logger: m => {
+                            if(m.status === 'recognizing text') {
+                                const prog = Math.round(m.progress * 100);
+                                statusText.innerText = "Analyzing structural geometric print alignments...";
+                                percentText.innerText = `${prog}%`;
+                                progressBar.style.width = `${prog}%`;
+                            }
+                        }
+                    });
+                    ocrBuffer = result.data.text;
+                }
+
+                if(!ocrBuffer || ocrBuffer.trim().length === 0) {
+                    triggerNotification("Document analysis completed but extraction string fields are void.", "bg-amber-50 text-amber-800 border-amber-200");
+                } else {
+                    triggerNotification("Document elements vectorized successfully!", "bg-green-50 text-green-700 border-green-200");
+                    ocrTextArea.value = ocrBuffer;
+                    ocrWorkspace.classList.remove('hidden');
+                }
+            } catch(err) {
+                console.error(err);
+                triggerNotification("A structural breakdown occurred in document rasterization parsing filters.", "bg-red-50 text-red-700 border-red-200");
+            }
+            ocrActionBtn.disabled = false;
+            globalProgress.classList.add('hidden');
+        });
+
+        ocrCopyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(ocrTextArea.value);
+            const orig = ocrCopyBtn.innerText; ocrCopyBtn.innerText = "Copied!";
+            setTimeout(() => ocrCopyBtn.innerText = orig, 2000);
+        });
+
+        ocrDownloadBtn.addEventListener('click', () => {
+            const blob = new Blob([ocrTextArea.value], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            const base = ocrInput.files[0].name.replace(/\.[^/.]+$/, "");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${base}_extracted_data.txt`;
+            link.click();
+        });
+    </script>
+</body>
+</html>
